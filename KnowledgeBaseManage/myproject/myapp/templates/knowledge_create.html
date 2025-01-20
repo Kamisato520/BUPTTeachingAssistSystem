@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Knowledge</title>
+</head>
+<body>
+    <h1>Add Knowledge</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <label for="title">Title:</label>
+        <textarea id="title" name="title" required></textarea>
+
+        <label for="content">Content:</label>
+        <textarea id="content" name="content" required></textarea>
+
+<!--        <label for="vector_id">Vector ID:</label>-->
+<!--        <input type="number" id="vector_id" name="vector_id" required>-->
+
+        <button type="submit">Add</button>
+    </form>
+    <a href="{% url 'knowledge_list' %}">Back to List</a>
+</body>
+</html>

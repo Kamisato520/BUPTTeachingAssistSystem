@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Knowledge List</title>
+    <script>
+        function confirmDelete(knowledgeId) {
+            if (confirm("Are you sure you want to delete this item?")) {
+                window.location.href = "/delete/" + knowledgeId + "/";
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Knowledge in Database</h1>
+    <a href="{% url 'knowledge_create' %}">Add Knowledge</a>
+    <ul>
+        {% for knowledge in knowledges %}
+            <li>
+                Title: {{ knowledge.title }} - Created at: {{ knowledge.created_at }}
+                <button onclick="confirmDelete({{ knowledge.id }})">Delete</button>
+            <br>
+                Content: {{ knowledge.content }}
+            <br>
+                vector_id: {{ knowledge.vector_id }}
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

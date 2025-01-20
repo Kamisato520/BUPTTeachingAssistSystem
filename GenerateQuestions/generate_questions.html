@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Generation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        textarea, input {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 1rem;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .question {
+            margin-bottom: 20px;
+        }
+        .options {
+            margin-left: 20px;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Question Generation API</h1>
+        <form id="questionForm">
+            <label for="teacher_prompt">Teacher Prompt</label>
+            <textarea id="teacher_prompt" placeholder="Enter the prompt for generating questions" rows="4"></textarea>
+
+            <label for="old_questions">Old Questions (JSON Format)</label>
+            <textarea id="old_questions" placeholder='[{"id": "old_q_1", "content": "What is elasticity of demand?", "question_type": "short_answer", "answer": "It measures sensitivity of demand to price changes."}]' rows="6"></textarea>
+
+            <button type="submit">Generate Questions</button>
+        </form>
+
+        <div class="results" id="results">
+            <!-- Results will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("questionForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const teacherPrompt = document.getElementById("teacher_prompt").value;
+            const oldQuestionsRaw = document.getElementById("old_questions").value;
+
+            // Parse old questions as JSON
+            let oldQuestions;
+            try {
+                oldQuestions = JSON.parse(oldQuestionsRaw);
+            } catch (e) {
+                document.getElementById("results").innerHTML = `<p class="error">Invalid JSON in Old Questions field</p>`;
+                return;
+            }
+
+            // Prepare API request payload
+            const payload = {
+                teacher_prompt: teacherPrompt,
+                old_questions: oldQuestions
+            };
+
+            try {
+                // Make API request
+                const response = await fetch("http://localhost:8080/generate_questions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Parse and display new questions
+                const newQuestions = data.new_questions;
+                const resultsDiv = document.getElementById("results");
+                resultsDiv.innerHTML = "<h3>Generated Questions</h3>";
+
+                newQuestions.forEach((question, index) => {
+                    // Add a horizontal line for separation (except before the first question)
+                    if (index > 0) {
+                        const hr = document.createElement("hr");
+                        resultsDiv.appendChild(hr);
+                    }
+
+                    const questionDiv = document.createElement("div");
+                    questionDiv.className = "question";
+
+                    // Add question type, content, and answer
+                    questionDiv.innerHTML = `
+                        <p><strong>Type:</strong> ${question.question_type}</p>
+                        <p><strong>Content:</strong> ${question.content}</p>
+                        <p><strong>Answer:</strong> ${question.answer}</p>
+                    `;
+
+                    // If question is multiple_choice, add options
+                    if (question.question_type === "multiple_choice" && question.metadata?.options?.length) {
+                        const optionsDiv = document.createElement("div");
+                        optionsDiv.className = "options";
+                        optionsDiv.innerHTML = "<strong>Options:</strong>";
+                        const optionsList = document.createElement("ul");
+
+                        question.metadata.options.forEach(option => {
+                            const optionItem = document.createElement("li");
+                            optionItem.textContent = option;
+                            optionsList.appendChild(optionItem);
+                        });
+
+                        optionsDiv.appendChild(optionsList);
+                        questionDiv.appendChild(optionsDiv);
+                    }
+
+                    resultsDiv.appendChild(questionDiv);
+                });
+            } catch (error) {
+                // Display error message
+                document.getElementById("results").innerHTML = `<p class="error">${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
